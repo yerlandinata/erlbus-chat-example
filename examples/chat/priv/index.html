@@ -1,5 +1,10 @@
 <html>
   <head>
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
       <title>ErlBus Chat</title>
       <script src="/assets/jquery.js"></script>
@@ -29,6 +34,7 @@
 
       function onOpen(evt) { 
         jQuery('#roomContainer').fadeIn('slow');
+        jQuery('#buttonJoin').fadeOut('slow');
       };  
 
       function onClose(evt) { 
@@ -54,6 +60,16 @@
         };
       };
 
+      function changeName() {
+        if(websocket.readyState == websocket.OPEN){
+          var txt = jQuery("#nameToChange").val();
+          websocket.send('name|' + txt);
+          jQuery("#nameToChange").val("");
+        } else {
+           showAlert('<span style="color: red;">ERROR: websocket is not ready</span>');
+        };
+      };
+
       function showMessage(data) {
         jQuery('#chatContainer').append('<div>' + data.sender + ' -> ' + data.msg + '</div>');
       };
@@ -72,19 +88,48 @@
       </style>
   </head>
   <body>
-    <div id="alertContainer"></div>
-    <input id="connectButton" type="button" value="Join the Chat Room!" onclick="connect();"/>
+    <div class="container row">
+        <div id="alertContainer"></div>
+        <div class="col s12">
+          <a id="buttonJoin" class="waves-effect waves-light btn" onclick="connect();">Join Public Chat Room! </a>
+        </div>
+        
+        <div class="col s12">
+          <div id="roomContainer">
+            <div id="chatContainer"></div>
+            <div class="row">
+              <!-- message -->
+              <div class="col s12">
+                <form onsubmit="sendMessage(); return false;">
+                  <div class="row">
+                    <div class="col s8 m10">
+                      <input id="textToSend" type="text" />
+                    </div>
+                    <div class="col s4 m2">
+                      <a class="waves-effect waves-light btn" onclick="sendMessage();">Send</a>
+                    </div>
+                  </div>
+                </form>
+              </div>
 
-    <div id="roomContainer">
-      <div id="chatContainer"></div>
-      <form onsubmit="sendMessage(); return false;">
-        <span>
-          <input id="textToSend" type="text" />
-        </span>
-        <span>
-          <input type="submit" value="send"/> 
-        </span>
-      </form>
+              <!-- name -->
+              <div class="col s12">
+                <form onsubmit="changeName(); return false;">
+                  <div class="row">
+                    <div class="col s8 m10">
+                      <input id="nameToChange" type="text" />
+                    </div>
+                    <div class="col s4 m2">
+                      <a class="waves-effect waves-light btn" onclick="changeName();">Change Name</a>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
     </div>
   </body>
 </html>

@@ -6,10 +6,11 @@
 -export([websocket_info/3]).
 -export([websocket_terminate/3]).
 
--define(CHATROOM_NAME, ?MODULE).
+-define(PUBLIC_CHATROOM, "chatroom_public").
 -define(TIMEOUT, 5 * 60 * 1000). % Innactivity Timeout
+-define(DEBUG, "debug").
 
--record(state, {name, handler}).
+-record(state, {name, handler, chatroom}).
 
 %% API
 
@@ -19,12 +20,25 @@ init(_, _Req, _Opts) ->
 websocket_init(_Type, Req, _Opts) ->
   % Create the handler from our custom callback
   Handler = ebus_proc:spawn_handler(fun chat_erlbus_handler:handle_msg/2, [self()]),
-  ebus:sub(Handler, ?CHATROOM_NAME),
-  {ok, Req, #state{name = get_name(Req), handler = Handler}, ?TIMEOUT}.
+  ebus:sub(Handler, ?PUBLIC_CHATROOM),
+  {ok, Req, #state{name = get_name(Req), handler = Handler, chatroom = ?PUBLIC_CHATROOM}, ?TIMEOUT}.
+
+update_state(State, [Type, Payload]) when Type =:= <<"name">> -> 
+  % ebus:pub(?DEBUG, "Name change from " ++ State#state.name ++ " to " ++ Payload),
+  #state{name = Payload, handler = State#state.handler, chatroom = State#state.chatroom};
+update_state(State, [Type, Payload]) when Type =:= <<"chatroom">> -> 
+  % ebus:pub(?DEBUG, State#state.name ++ " left " ++ State#state.chatroom ++ " and then joined chatroom_" ++ Payload),
+  ebus:unsub(State#state.handler, State#state.chatroom),
+  ebus:sub(State#state.handler, "chatroom_" ++ Payload),
+  #state{name = State#state.name, handler = State#state.handler, chatroom = "chatroom_" ++ Payload};
+update_state(State, _) -> 
+  ebus:pub(?DEBUG, "aa message has been sent"),
+  State.
 
 websocket_handle({text, Msg}, Req, State) ->
-  ebus:pub(?CHATROOM_NAME, {State#state.name, Msg}),
-  {ok, Req, State};
+  ebus:pub(State#state.chatroom, {State#state.name, Msg}),
+  ebus:pub(?DEBUG, string:split(Msg, "|")),
+  {ok, Req, update_state(State, string:split(Msg, "|"))};
 websocket_handle(_Data, Req, State) ->
   {ok, Req, State}.
 
@@ -35,7 +49,7 @@ websocket_info(_Info, Req, State) ->
 
 websocket_terminate(_Reason, _Req, State) ->
   % Unsubscribe the handler
-  ebus:unsub(State#state.handler, ?CHATROOM_NAME),
+  ebus:unsub(State#state.handler, State#state.chatroom),
   ok.
 
 %% Private methods
