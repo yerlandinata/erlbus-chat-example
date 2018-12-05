@@ -39,6 +39,7 @@
 
       function onClose(evt) { 
         jQuery('#roomContainer').fadeOut('slow');
+        jQuery('#buttonJoin').fadeIn('slow');
         showAlert('<span style="color: red;">Websocket connection has been closed!</span>');
       };  
 
@@ -66,7 +67,17 @@
           websocket.send('name|' + txt);
           jQuery("#nameToChange").val("");
         } else {
-           showAlert('<span style="color: red;">ERROR: websocket is not ready</span>');
+          showAlert('<span style="color: red;">ERROR: websocket is not ready</span>');
+        };
+      };
+
+      function changeRoom() {
+        if(websocket.readyState == websocket.OPEN){
+          var txt = jQuery("#newRoom").val();
+          websocket.send('chatroom|' + txt);
+          jQuery("#newRoom").val("");
+        } else {
+          showAlert('<span style="color: red;">ERROR: websocket is not ready</span>');
         };
       };
 
@@ -116,15 +127,29 @@
               <div class="col s12">
                 <form onsubmit="changeName(); return false;">
                   <div class="row">
-                    <div class="col s8 m10">
+                    <div class="col s6 m8">
                       <input id="nameToChange" type="text" />
                     </div>
-                    <div class="col s4 m2">
+                    <div class="col s6 m4">
                       <a class="waves-effect waves-light btn" onclick="changeName();">Change Name</a>
                     </div>
                   </div>
                 </form>
               </div>
+
+              <!-- chatroom -->
+              <div class="col s12">
+                  <form onsubmit="changeRoom(); return false;">
+                    <div class="row">
+                      <div class="col s6 m8">
+                        <input id="newRoom" type="text" />
+                      </div>
+                      <div class="col s6 m4">
+                        <a class="waves-effect waves-light btn" onclick="changeRoom();">Change Room</a>
+                      </div>
+                    </div>
+                  </form>
+                </div>
 
             </div>
           </div>
